@@ -1,0 +1,28 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+defaultTasks 'build'
+
+group = 'com.aaron1011'
+version = '0.0.1-SNAPSHOT'
+description = 'A tool to find the minimum amount of mods needed to reproduce a crash'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.ow2.asm:asm-debug-all:5.0.3'
+    compile 'org.ow2.asm:asm-debug-all:5.0.3:sources'
+    testCompile "junit:junit:4.12"
+}
