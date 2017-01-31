@@ -17,13 +17,19 @@ public class ModParser {
 
     private static final Splitter VERSION_SEPARATOR = Splitter.on('@').omitEmptyStrings().trimResults();
 
-    public static DirectedGraph<ModData> constructGraph(Map<String, ModData> mods) {
+    public static List<ModData> sortMods(Map<String, ModData> mods) {
         DirectedGraph<ModData> graph = new DirectedGraph<>();
 
         for (ModData mod: mods.values()) {
             parseDependencies(mod);
         }
 
+        // Edges in the graph point from dependency to dependant.
+        // For example, if a mod A depends on a mod B, the graph will contain
+        // an edge from B to A
+        // The graph is then sorted into a list such that a mod always
+        // comes after all of its dependants. This allows mods to removed off of
+        // the front of the list while estill ensuring that all dependencies are always met
         for (ModData mod: mods.values()) {
             for (String dependency: mod.parsedDependencies) {
                 ModData otherMod = mods.get(dependency);
@@ -34,8 +40,7 @@ public class ModParser {
                 }
             }
         }
-        graph = TopologicalOrder.createOrderedLoad(graph);
-        return graph;
+        return TopologicalOrder.createOrderedLoad(graph);
     }
 
     private static void parseDependencies(ModData mod) {

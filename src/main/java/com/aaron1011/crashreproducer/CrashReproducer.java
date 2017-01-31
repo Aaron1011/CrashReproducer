@@ -1,6 +1,10 @@
 package com.aaron1011.crashreproducer;
 
-import com.aaron1011.crashreproducer.graph.DirectedGraph;
+import com.aaron1011.crashreproducer.detector.ErrorStringFinder;
+import com.aaron1011.crashreproducer.detector.SimpleStringFinder;
+import com.aaron1011.crashreproducer.detector.StdoutStrategy;
+import com.aaron1011.crashreproducer.detector.Strategy;
+import com.google.common.collect.Lists;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -17,9 +21,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarInputStream;
@@ -42,7 +44,11 @@ public class CrashReproducer {
     private static final PathMatcher JAR_FILE = path -> path.toString().endsWith(JAR_EXTENSION);
     private static final DirectoryStream.Filter<Path> JAR_FILTER = path -> path.toString().endsWith(JAR_EXTENSION);
 
-    private File serverDir;
+    public final String serverCommand;
+    public final File serverDir;
+    public final long timeout = 20 * 1000;
+    //public final List<Strategy> strategies = Lists.newArrayList(new StdoutStrategy());
+    //public final List<ErrorStringFinder> finders = Lists.newArrayList(new SimpleStringFinder("CyclopsCore", true));
 
     public static void main(String[] args) {
         new CrashReproducer(args);
@@ -52,19 +58,26 @@ public class CrashReproducer {
        LOGGER.setLevel(Level.ALL);
 
         final OptionParser parser = new OptionParser();
-        OptionSpec<File> dirOpt = parser.accepts("server-dir").withRequiredArg().ofType(File.class);
+        OptionSpec<File> dirOpt = parser.accepts("server-dir").withRequiredArg().defaultsTo(".").ofType(File.class);
+        OptionSpec<String> serverCommandOpt = parser.accepts("server-command").withRequiredArg();
+
         OptionSet options = parser.parse(args);
 
         serverDir = options.valueOf(dirOpt);
+        serverCommand = options.valueOf(serverCommandOpt);
         this.run();
     }
 
     public void run() {
         Path modsDir = this.serverDir.toPath().resolve("mods");
+
         Map<String, ModData> data = this.scanDirectory(modsDir);
-        DirectedGraph<ModData> graph = ModParser.constructGraph(data);
-        System.err.println("Graph: ");
-        System.err.println(graph);
+        List<ModData> sorted = ModParser.sortMods(data);
+        System.err.println("Sorted");
+        System.err.println(sorted);
+
+        ModNarrower narrower = new ModNarrower();
+        narrower.mainLoop(this, sorted);
     }
 
     // Taken from SpongeVanilla

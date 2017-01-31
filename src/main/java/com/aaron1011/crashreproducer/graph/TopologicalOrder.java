@@ -66,22 +66,12 @@ public class TopologicalOrder<T> {
         order.push(root.getData());
     }*/
 
-    public static <T> DirectedGraph<T> createOrderedLoad(DirectedGraph<T> graph) {
-        final DirectedGraph<T> orderedGraph = new DirectedGraph<T>();
-        final Set<T> moved = new HashSet<T>();
-        while (moved.size() != graph.getNodeCount()) {
+    public static <T>List<T> createOrderedLoad(DirectedGraph<T> graph) {
+        final List<T> orderedList = new ArrayList<>();
+        while (graph.getNodeCount() != 0) {
             DirectedGraph.DataNode<T> next = null;
             for (DirectedGraph.DataNode<T> node : graph.getNodes()) {
-                boolean found = true;
-                for (DirectedGraph.DataNode<T> other: node.getAdjacent()) {
-                    if (!moved.contains(other.getData())) {
-                        found = false;
-                        break;
-                    } else {
-                        orderedGraph.addEdge(node, other);
-                    }
-                }
-                if (found) {
+                if (node.getEdgeCount() == 0) {
                     next = node;
                     break;
                 }
@@ -89,10 +79,10 @@ public class TopologicalOrder<T> {
             if (next == null) {
                 throw new IllegalStateException("Graph is cyclic!");
             }
-            orderedGraph.add(next.getData());
-            moved.add(next.getData());
+            orderedList.add(next.getData());
+            graph.delete(next);
         }
-        return orderedGraph;
+        return orderedList;
     }
 
     /*public static <T> void sort(DirectedGraph<T> graph) {
